@@ -4,6 +4,7 @@ Mobile version of [epub.press](https://epub.press/) that allows you to convert w
 
 # TODO
 
+* [x] Devices management
 * [ ] custom server
 * [ ] ebooks generation
 * [ ] share with webook
