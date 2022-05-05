@@ -4,11 +4,11 @@ Mobile version of [epub.press](https://epub.press/) that allows you to convert w
 
 # TODO
 
-[ ] custom server
-[ ] ebooks generation
-[ ] share with webook
-[ ] about info
-[ ] icons
+* [ ] custom server
+* [ ] ebooks generation
+* [ ] share with webook
+* [ ] about info
+* [ ] icons
 
 
 # Powered by
