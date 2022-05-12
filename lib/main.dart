@@ -6,7 +6,7 @@ import 'package:hive/src/box/default_key_comparator.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:webook/screens/home.dart';
 
-const webookApi = 'https://epub.press/api/v1';
+const webookApi = 'https://epub.press';
 
 const devicesBox = 'devices';
 const ebooksBox = 'ebooks';

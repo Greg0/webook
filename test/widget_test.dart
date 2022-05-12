@@ -5,26 +5,33 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
-import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'dart:convert';
 
-import 'package:webook/main.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:webook/api/request/create.dart';
+import 'package:webook/api/response/error.dart';
 
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const WEBookApp());
+    var request = CreateRequest(
+        title: 'title',
+        urls: ['url'],
+        author: 'author',
+        description: 'description');
+    var json = jsonEncode(request.toJson());
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    expect(json, equals(
+        '{"title":"title","description":"description","author":"author","genre":"ebook","coverPath":"","urls":["url"]}'));
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    var jsonObject = {
+      'errors':[{'status':'500','detail':'Unknown error.'}]
+    };
+
+    var errResponse = ErrorResponse.fromJson(jsonObject);
+
+    expect(errResponse.errors.length, equals(1));
+    expect(errResponse.errors[0].detail, equals('Unknown error.'));
+    expect(errResponse.errors[0].status, equals('500'));
   });
 }

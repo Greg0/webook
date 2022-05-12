@@ -1,5 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="pl.widecode.webook">
+   <uses-permission android:name="android.permission.INTERNET" />
    <application
         android:label="webook"
         android:name="${applicationName}"

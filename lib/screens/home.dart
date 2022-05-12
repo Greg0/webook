@@ -3,6 +3,11 @@
 // found in the LICENSE file.
 
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:webook/api/client.dart';
+import 'package:webook/api/request/create.dart';
+import 'package:webook/api/request/status.dart';
+import 'package:webook/api/response/create.dart';
+import 'package:webook/api/response/status.dart';
 import 'package:webook/main.dart';
 import 'package:webook/screens/devices.dart';
 import 'package:flutter/material.dart';
@@ -32,8 +37,7 @@ class EBooksPage extends StatelessWidget {
             onPressed: () {
               showAboutDialog(
                   context: context,
-                  applicationLegalese: 'Powered by Epub.press'
-              );
+                  applicationLegalese: 'Powered by Epub.press');
               // Navigator.pushNamed(context, FavoritesPage.routeName);
             },
             icon: const Icon(Icons.info_outline),
@@ -60,61 +64,93 @@ class EBooksPage extends StatelessWidget {
                   return InkWell(
                     onTap: () {
                       Navigator.of(context).push(MaterialPageRoute(
-                          builder: (context) => EbookFormPage(ebookIndex: index)));
+                          builder: (context) =>
+                              EbookFormPage(ebookIndex: index)));
                     },
                     child: Card(
                         child: Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Column(
-                            children: [
-                              ListTile(
-                                trailing: IconButton(
-                                  icon: const Icon(Icons.delete),
-                                  onPressed: () {
-                                    showDialog(
-                                      context: context,
-                                      barrierDismissible: true,
-                                      builder: (BuildContext context) => AlertDialog(
-                                        content: Text(
-                                          "Do you want to delete \"${book.title}\" device?",
-                                        ),
-                                        actions: <Widget>[
-                                          TextButton(
-                                            child: const Text("No"),
-                                            onPressed: () => Navigator.of(context).pop(),
-                                          ),
-                                          TextButton(
-                                            child: const Text("Yes"),
-                                            onPressed: () async {
-                                              Navigator.of(context).pop();
-                                              await box.deleteAt(index);
-                                            },
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  },
-                                ),
-                                title: Text(book.title),
-                                subtitle: Text(book.url),
-                              )
-                            ],
-                          ),
-                        )),
+                      padding: const EdgeInsets.all(8),
+                      child: Column(
+                        children: [
+                          ListTile(
+                            trailing: Wrap(children: [
+                              downloadIconButton(context, book, box, index),
+                              deleteIconButton(context, book, box, index)
+                            ]),
+                            title: Text(book.title),
+                            subtitle: Text(book.url),
+                          )
+                        ],
+                      ),
+                    )),
                   );
                 });
           }),
       floatingActionButton: Builder(
         builder: (BuildContext context) {
           return FloatingActionButton(
-            child: const Icon(Icons.add),
+              child: const Icon(Icons.add),
               onPressed: () {
                 Navigator.of(context).push(MaterialPageRoute(
                     builder: (context) => EbookFormPage(ebookIndex: null)));
-              }
-          );
+              });
         },
       ),
+    );
+  }
+
+  IconButton deleteIconButton(
+      BuildContext context, Book book, Box<Book> box, int index) {
+    return IconButton(
+      icon: const Icon(Icons.delete),
+      onPressed: () {
+        showDialog(
+          context: context,
+          barrierDismissible: true,
+          builder: (BuildContext context) => AlertDialog(
+            content: Text(
+              "Do you want to delete \"${book.title}\" ebook?",
+            ),
+            actions: <Widget>[
+              TextButton(
+                child: const Text("No"),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+              TextButton(
+                child: const Text("Yes"),
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                  await box.deleteAt(index);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  IconButton downloadIconButton(
+      BuildContext context, Book book, Box<Book> box, int index) {
+    return IconButton(
+      icon: const Icon(Icons.download),
+      onPressed: () async {
+        ApiClient api = ApiClient(webookApi);
+        CreateResponse response = await api.create(CreateRequest(
+            title: book.title,
+            urls: [book.url],
+            author: book.author,
+            description: book.description));
+        StatusResponse statusResponse = await api.status(StatusRequest(response.id));
+        showDialog(
+          context: context,
+          barrierDismissible: true,
+          builder: (BuildContext context) =>
+              SimpleDialog(title: Text(statusResponse.message), children: [
+                Text(statusResponse.progress.toString())
+              ]),
+        );
+      },
     );
   }
 }
