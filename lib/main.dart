@@ -1,18 +1,28 @@
 import 'package:webook/models/device.dart';
+import 'package:webook/models/ebook.dart';
 import 'package:webook/screens/devices.dart';
 import 'package:flutter/material.dart';
+import 'package:hive/src/box/default_key_comparator.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:webook/screens/home.dart';
 
+const webookApi = 'https://epub.press/api/v1';
+
 const devicesBox = 'devices';
+const ebooksBox = 'ebooks';
 
 Future main() async {
   await Hive.initFlutter();
 
   Hive.registerAdapter(DeviceAdapter());
   Hive.registerAdapter(EbookFormatAdapter());
+  Hive.registerAdapter(BookAdapter());
 
   await Hive.openBox<Device>(devicesBox);
+  await Hive.openBox<Book>(
+      ebooksBox,
+      keyComparator: (dynamic k1, dynamic k2) => -1 * defaultKeyComparator(k1, k2) // DESC ordering
+  );
   runApp(WEBookApp());
 }
 

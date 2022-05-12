@@ -2,8 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:webook/main.dart';
 import 'package:webook/screens/devices.dart';
 import 'package:flutter/material.dart';
+import 'package:webook/screens/ebook_form.dart';
+
+import '../models/ebook.dart';
 
 class EBooksPage extends StatelessWidget {
   static const routeName = '/';
@@ -37,12 +42,78 @@ class EBooksPage extends StatelessWidget {
         ],
       ),
       // drawer: const NavigationDrawer(),
-      body: ListView.builder(
-        itemCount: 100,
-        cacheExtent: 20.0,
-        controller: ScrollController(),
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        itemBuilder: (context, index) => ItemTile(index),
+      body: ValueListenableBuilder(
+          valueListenable: Hive.box<Book>(ebooksBox).listenable(),
+          builder: (context, Box<Book> box, _) {
+            if (box.values.isEmpty) {
+              return const Center(child: Text('Books list is empty'));
+            }
+
+            return ListView.builder(
+                itemCount: box.length,
+                itemBuilder: (context, index) {
+                  Book? book = box.getAt(index);
+                  if (book == null) {
+                    return const SizedBox.shrink();
+                  }
+
+                  return InkWell(
+                    onTap: () {
+                      Navigator.of(context).push(MaterialPageRoute(
+                          builder: (context) => EbookFormPage(ebookIndex: index)));
+                    },
+                    child: Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Column(
+                            children: [
+                              ListTile(
+                                trailing: IconButton(
+                                  icon: const Icon(Icons.delete),
+                                  onPressed: () {
+                                    showDialog(
+                                      context: context,
+                                      barrierDismissible: true,
+                                      builder: (BuildContext context) => AlertDialog(
+                                        content: Text(
+                                          "Do you want to delete \"${book.title}\" device?",
+                                        ),
+                                        actions: <Widget>[
+                                          TextButton(
+                                            child: const Text("No"),
+                                            onPressed: () => Navigator.of(context).pop(),
+                                          ),
+                                          TextButton(
+                                            child: const Text("Yes"),
+                                            onPressed: () async {
+                                              Navigator.of(context).pop();
+                                              await box.deleteAt(index);
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
+                                title: Text(book.title),
+                                subtitle: Text(book.url),
+                              )
+                            ],
+                          ),
+                        )),
+                  );
+                });
+          }),
+      floatingActionButton: Builder(
+        builder: (BuildContext context) {
+          return FloatingActionButton(
+            child: const Icon(Icons.add),
+              onPressed: () {
+                Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => EbookFormPage(ebookIndex: null)));
+              }
+          );
+        },
       ),
     );
   }
