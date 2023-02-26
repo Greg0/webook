@@ -16,6 +16,8 @@ class Book {
   String? coverPath;
   @HiveField(5)
   String url;
+  @HiveField(6)
+  String? location;
 
   Book(
       this.title,

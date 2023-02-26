@@ -33,9 +33,11 @@ class WEBookApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'WEBook',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.deepPurple,
         visualDensity: VisualDensity.adaptivePlatformDensity,
+        useMaterial3: true
       ),
       routes: {
         EBooksPage.routeName: (context) => const EBooksPage(),

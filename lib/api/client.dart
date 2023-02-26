@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:webook/api/request/download.dart';
+import 'package:webook/api/response/download.dart';
 import 'package:webook/api/response/error.dart';
 import 'response/create.dart';
 import 'response/status.dart';
@@ -38,6 +40,15 @@ class ApiClient {
       return StatusResponse.fromJson(jsonDecode(response.body));
     }
 
-    throw Exception('Failed to create book');
+    throw Exception('Failed to receive book status');
   }
-}
+
+  Future<DownloadResponse> download(DownloadRequest request) async {
+    var url = Uri.parse('$host/api/v1/books/${request.bookId}/download?filetype=${request.filetype.value}');
+    http.Response response = await http.get(url, headers: headers);
+    if (response.statusCode == 200) {
+      return DownloadResponse(bookContent: response.bodyBytes);
+    }
+
+    throw Exception('Failed to download book');
+  }}
