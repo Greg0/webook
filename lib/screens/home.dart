@@ -14,12 +14,15 @@ import 'package:path_provider/path_provider.dart';
 import 'package:webook/api/client.dart';
 import 'package:webook/api/request/create.dart';
 import 'package:webook/api/request/download.dart';
+import 'package:webook/api/request/email.dart';
 import 'package:webook/api/request/filetype.dart';
 import 'package:webook/api/request/status.dart';
 import 'package:webook/api/response/create.dart';
 import 'package:webook/api/response/download.dart';
+import 'package:webook/api/response/email.dart';
 import 'package:webook/api/response/status.dart';
 import 'package:webook/main.dart';
+import 'package:webook/models/device.dart';
 import 'package:webook/screens/devices.dart';
 import 'package:flutter/material.dart';
 import 'package:webook/screens/ebook_form.dart';
@@ -93,6 +96,8 @@ class EBooksPage extends StatelessWidget {
                           children: [
                             ListTile(
                               trailing: Wrap(children: [
+                                sendToDeviceIconButton(
+                                    context, book, box, index),
                                 downloadIconButton(context, book, box, index),
                                 deleteIconButton(context, book, box, index)
                               ]),
@@ -176,16 +181,9 @@ class EBooksPage extends StatelessWidget {
           downloadBook(Filetype filetype) async {
             DownloadResponse downloadResponse = await api
                 .download(DownloadRequest(createResponse.id, filetype));
-            Directory? dir = await getApplicationDocumentsDirectory();
-            // if (dir == null) {
-            //   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            //     content: Text('Can\'t access storage'),
-            //     action: SnackBarAction(
-            //         label: 'Retry', onPressed: () => downloadBook(filetype)),
-            //   ));
-            //   return;
-            // }
-            File file = new File(p.join(dir.path, "${p.basename(book.title)}.${filetype.value}"));
+            Directory? dir = await getExternalStorageDirectory();
+            File file = new File(p.join(
+                dir!.path, "${p.basename(book.title)}.${filetype.value}"));
             file.writeAsBytes(downloadResponse.bookContent);
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               content: Text('Book saved'),
@@ -197,25 +195,93 @@ class EBooksPage extends StatelessWidget {
           }
 
           sleep(Duration(seconds: 2));
+          try {
+            showDialog(
+                context: context,
+                builder: (BuildContext context) => SimpleDialog(
+                      title: Text("Choose book format"),
+                      children: [
+                        TextButton(
+                            onPressed: () {
+                              downloadBook(Filetype.MOBI);
+                              Navigator.of(context).pop();
+                            },
+                            child: Text("MOBI")),
+                        TextButton(
+                            onPressed: () {
+                              downloadBook(Filetype.EPUB);
+                              Navigator.of(context).pop();
+                            },
+                            child: Text("EPUB")),
+                      ],
+                    ));
+          } catch (e) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text('Can\'t save book. Check app permissions'),
+            ));
+          }
+        });
+  }
+
+  IconButton sendToDeviceIconButton(
+      BuildContext context, Book book, Box<Book> box, int index) {
+    return IconButton(
+        icon: const Icon(Icons.send),
+        onPressed: () async {
+          Device? choosenDevice;
+          ApiClient api = ApiClient(webookApi);
+          CreateResponse createResponse = await api.create(CreateRequest(
+              title: book.title,
+              urls: [book.url],
+              author: book.author,
+              description: book.description));
+
+          var hud = ProgressHud.of(context);
+          hud?.show(ProgressHudType.progress, "Preparing");
+          StatusResponse statusResponse;
+          do {
+            statusResponse = await api.status(StatusRequest(createResponse.id));
+            hud?.updateProgress(
+                statusResponse.progress / 100, statusResponse.message);
+
+            sleep(Duration(milliseconds: 200));
+          } while (statusResponse.progress != 100);
+          hud?.showAndDismiss(ProgressHudType.success, statusResponse.message);
+          sleep(Duration(seconds: 2));
           showDialog(
               context: context,
               builder: (BuildContext context) => SimpleDialog(
-                    title: Text("Choose book format"),
-                    children: [
-                      TextButton(
-                          onPressed: () {
-                            downloadBook(Filetype.MOBI);
-                            Navigator.of(context).pop();
-                          },
-                          child: Text("MOBI")),
-                      TextButton(
-                          onPressed: () {
-                            downloadBook(Filetype.EPUB);
-                            Navigator.of(context).pop();
-                          },
-                          child: Text("EPUB")),
-                    ],
-                  ));
+                title: Text("Choose device"),
+                children: [
+                  DropdownButtonFormField(
+                    items: DeviceRepository.getDevices(),
+                    hint: const Text("Device"),
+                    onChanged: (Device? value) {
+                      choosenDevice = value;
+                    },
+                  ),
+                  TextButton(onPressed: () async {
+                    if (choosenDevice == null) {
+                      return;
+                    }
+                    ApiClient api = ApiClient(webookApi);
+                    await api.email(new EmailRequest(
+                        createResponse.id,
+                        choosenDevice!.email,
+                        choosenDevice?.ebookFormat == EbookFormat.MOBI
+                            ? Filetype.MOBI
+                            : Filetype.EPUB
+                    ));
+                    Navigator.of(context).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text('Book sent to ${choosenDevice!.email}'),
+                    ));
+                  }, child: Text('Send'))
+                ],
+              ));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Can\'t send book'),
+          ));
         });
   }
 }

@@ -1,9 +1,9 @@
 import 'filetype.dart';
 
-class Email {
+class EmailRequest {
   final String bookId;
-  final Email email;
+  final String email;
   final Filetype filetype;
 
-  Email(this.bookId, this.email, this.filetype);
+  EmailRequest(this.bookId, this.email, this.filetype);
 }

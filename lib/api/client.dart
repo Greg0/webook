@@ -7,10 +7,12 @@ import 'package:webook/api/response/error.dart';
 import 'response/create.dart';
 import 'response/status.dart';
 import 'request/create.dart';
+import 'request/email.dart';
+import 'response/email.dart';
 import 'request/status.dart';
 
 const headers = <String, String>{
-'Content-Type': 'application/json; charset=UTF-8',
+  'Content-Type': 'application/json; charset=UTF-8',
 };
 
 class ApiClient {
@@ -35,7 +37,9 @@ class ApiClient {
   }
 
   Future<StatusResponse> status(StatusRequest request) async {
-    http.Response response = await http.get(Uri.parse('$host/api/v1/books/${request.bookId}/status'), headers: headers);
+    http.Response response = await http.get(
+        Uri.parse('$host/api/v1/books/${request.bookId}/status'),
+        headers: headers);
     if (response.statusCode == 200) {
       return StatusResponse.fromJson(jsonDecode(response.body));
     }
@@ -44,11 +48,26 @@ class ApiClient {
   }
 
   Future<DownloadResponse> download(DownloadRequest request) async {
-    var url = Uri.parse('$host/api/v1/books/${request.bookId}/download?filetype=${request.filetype.value}');
+    var url = Uri.parse(
+        '$host/api/v1/books/${request.bookId}/download?filetype=${request
+            .filetype.value}');
     http.Response response = await http.get(url, headers: headers);
     if (response.statusCode == 200) {
       return DownloadResponse(bookContent: response.bodyBytes);
     }
 
     throw Exception('Failed to download book');
-  }}
+  }
+
+  Future<EmailResponse> email(EmailRequest request) async {
+    var url = Uri.parse(
+        '$host/api/v1/books/${request.bookId}/email?email=${request.email}&filetype=${request.filetype.value}');
+    http.Response response = await http.get(url, headers: headers);
+    if (response.statusCode == 200) {
+      return EmailResponse(msg: response.body);
+    }
+
+    throw Exception('Failed to send book');
+  }
+
+}

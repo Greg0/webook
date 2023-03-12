@@ -1,4 +1,6 @@
+import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
+import 'package:webook/main.dart';
 
 part 'device.g.dart';
 
@@ -30,5 +32,18 @@ class Device {
 
   String get ebookFormat {
     return ebookFormats[format] ?? "MOBI - Kindle readers";
+  }
+}
+
+class DeviceRepository {
+  static List<DropdownMenuItem<Device>> getDevices() {
+    Box<Device> box = Hive.box<Device>(devicesBox);
+    List<Device> devices = box.values.toList().cast<Device>();
+    List<DropdownMenuItem<Device>> menuItems = [];
+    for (var device in devices) {
+      menuItems.add(DropdownMenuItem(
+          child: Text(device.name.toString()), value: device));
+    }
+    return menuItems;
   }
 }
